@@ -36,3 +36,4 @@
 /Users/derek/Documents/Projects/MillionProperties.Api/obj/Debug/net9.0/MillionProperties.Api.pdb
 /Users/derek/Documents/Projects/MillionProperties.Api/obj/Debug/net9.0/MillionProperties.Api.genruntimeconfig.cache
 /Users/derek/Documents/Projects/MillionProperties.Api/obj/Debug/net9.0/ref/MillionProperties.Api.dll
+/Users/derek/Documents/Projects/MillionProperties.Api/obj/Debug/net9.0/MillionProperties.Api.sourcelink.json

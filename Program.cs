@@ -1,4 +1,17 @@
+using MongoDB.Driver;
+using MillionProperties.Api.Models;
+using Microsoft.Extensions.Options;
+
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.Configure<MongoDbSettings>(
+    builder.Configuration.GetSection("MongoDb"));
+
+builder.Services.AddSingleton<IMongoClient>(sp =>
+{
+    var settings = sp.GetRequiredService<IOptions<MongoDbSettings>>().Value;
+    return new MongoClient(settings.ConnectionString);
+});
 
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
