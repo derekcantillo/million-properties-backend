@@ -62,16 +62,22 @@ public class PropertyService : IPropertyService
             .Limit(pageSize)
             .ToListAsync();
 
-        // Load owners and images for each property
+        var resultProperties = new List<Property>();
+        
         foreach (var property in properties)
         {
             property.Owner = await _owners.Find(o => o.IdOwner == property.IdOwner).FirstOrDefaultAsync();
+            
             property.Images = await _images.Find(i => i.IdProperty == property.Id).ToListAsync();
+            
+            property.Traces = await _traces.Find(t => t.IdProperty == property.Id).ToListAsync();
+            
+            resultProperties.Add(property);
         }
 
         return new PagedResult<Property>
         {
-            Data = properties,
+            Data = resultProperties,
             Total = (int)total,
             Page = page,
             PageSize = pageSize,
