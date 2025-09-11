@@ -36,14 +36,17 @@ public class Property
     [JsonPropertyName("year")]
     public int Year { get; set; }
     
+    [BsonElement("owner")]
     [BsonIgnoreIfNull]
     [JsonPropertyName("owner")]
     public Owner? Owner { get; set; }
     
+    [BsonElement("images")]
     [BsonIgnoreIfNull]
     [JsonPropertyName("images")]
     public List<PropertyImage>? Images { get; set; }
     
+    [BsonElement("traces")]
     [BsonIgnoreIfNull]
     [JsonPropertyName("traces")]
     public List<PropertyTrace>? Traces { get; set; }

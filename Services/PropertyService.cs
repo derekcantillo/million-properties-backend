@@ -65,54 +65,21 @@ public class PropertyService : IPropertyService
             .Limit(pageSize)
             .ToListAsync();
 
-        // Cargar datos relacionados usando aggregation pipeline para cada propiedad
+        // Cargar datos relacionados de forma individual para evitar problemas de deserialización
         var resultProperties = new List<Property>();
         
         foreach (var property in properties)
         {
-            var pipeline = new[]
-            {
-                new MongoDB.Bson.BsonDocument("$match", new MongoDB.Bson.BsonDocument("_id", 
-                    MongoDB.Bson.ObjectId.Parse(property.Id))),
-                new MongoDB.Bson.BsonDocument("$lookup", new MongoDB.Bson.BsonDocument
-                {
-                    { "from", "Owners" },
-                    { "localField", "idOwner" },
-                    { "foreignField", "_id" },
-                    { "as", "owner" }
-                }),
-                new MongoDB.Bson.BsonDocument("$lookup", new MongoDB.Bson.BsonDocument
-                {
-                    { "from", "PropertyImages" },
-                    { "localField", "_id" },
-                    { "foreignField", "idProperty" },
-                    { "as", "images" }
-                }),
-                new MongoDB.Bson.BsonDocument("$lookup", new MongoDB.Bson.BsonDocument
-                {
-                    { "from", "PropertyTraces" },
-                    { "localField", "_id" },
-                    { "foreignField", "idProperty" },
-                    { "as", "traces" }
-                }),
-                new MongoDB.Bson.BsonDocument("$addFields", new MongoDB.Bson.BsonDocument
-                {
-                    { "owner", new MongoDB.Bson.BsonDocument("$arrayElemAt", 
-                        new MongoDB.Bson.BsonArray { "$owner", 0 }) }
-                })
-            };
-
-            var result = await _properties.Aggregate<MongoDB.Bson.BsonDocument>(pipeline).FirstOrDefaultAsync();
+            // Cargar owner
+            property.Owner = await _owners.Find(o => o.IdOwner == property.IdOwner).FirstOrDefaultAsync();
             
-            if (result != null)
-            {
-                var fullProperty = MongoDB.Bson.Serialization.BsonSerializer.Deserialize<Property>(result);
-                resultProperties.Add(fullProperty);
-            }
-            else
-            {
-                resultProperties.Add(property);
-            }
+            // Cargar imágenes
+            property.Images = await _images.Find(i => i.IdProperty == property.Id).ToListAsync();
+            
+            // Cargar trazas
+            property.Traces = await _traces.Find(t => t.IdProperty == property.Id).ToListAsync();
+            
+            resultProperties.Add(property);
         }
 
         return new PagedResult<Property>
@@ -130,43 +97,16 @@ public class PropertyService : IPropertyService
 
     public async Task<Property?> GetPropertyByIdAsync(string id)
     {
-        var pipeline = new[]
-        {
-            new MongoDB.Bson.BsonDocument("$match", new MongoDB.Bson.BsonDocument("_id", 
-                MongoDB.Bson.ObjectId.Parse(id))),
-            new MongoDB.Bson.BsonDocument("$lookup", new MongoDB.Bson.BsonDocument
-            {
-                { "from", "Owners" },
-                { "localField", "idOwner" },
-                { "foreignField", "_id" },
-                { "as", "owner" }
-            }),
-            new MongoDB.Bson.BsonDocument("$lookup", new MongoDB.Bson.BsonDocument
-            {
-                { "from", "PropertyImages" },
-                { "localField", "_id" },
-                { "foreignField", "idProperty" },
-                { "as", "images" }
-            }),
-            new MongoDB.Bson.BsonDocument("$lookup", new MongoDB.Bson.BsonDocument
-            {
-                { "from", "PropertyTraces" },
-                { "localField", "_id" },
-                { "foreignField", "idProperty" },
-                { "as", "traces" }
-            }),
-            new MongoDB.Bson.BsonDocument("$addFields", new MongoDB.Bson.BsonDocument
-            {
-                { "owner", new MongoDB.Bson.BsonDocument("$arrayElemAt", 
-                    new MongoDB.Bson.BsonArray { "$owner", 0 }) }
-            })
-        };
-
-        var result = await _properties.Aggregate<MongoDB.Bson.BsonDocument>(pipeline).FirstOrDefaultAsync();
+        var property = await _properties.Find(p => p.Id == id).FirstOrDefaultAsync();
         
-        if (result == null)
+        if (property == null)
             return null;
 
-        return MongoDB.Bson.Serialization.BsonSerializer.Deserialize<Property>(result);
+        // Cargar datos relacionados
+        property.Owner = await _owners.Find(o => o.IdOwner == property.IdOwner).FirstOrDefaultAsync();
+        property.Images = await _images.Find(i => i.IdProperty == property.Id).ToListAsync();
+        property.Traces = await _traces.Find(t => t.IdProperty == property.Id).ToListAsync();
+
+        return property;
     }
 }
