@@ -28,51 +28,92 @@ public class PropertyService : IPropertyService
         int page = 1,
         int pageSize = 10)
     {
-        var filterBuilder = Builders<Property>.Filter;
-        var filter = filterBuilder.Empty;
-
+        // Construir filtros para el match stage
+        var matchFilters = new List<MongoDB.Bson.BsonDocument>();
+        
         if (!string.IsNullOrWhiteSpace(name))
         {
-            filter &= filterBuilder.Regex(p => p.Name, 
-                new MongoDB.Bson.BsonRegularExpression(name, "i"));
+            matchFilters.Add(new MongoDB.Bson.BsonDocument("name", 
+                new MongoDB.Bson.BsonRegularExpression(name, "i")));
         }
 
         if (!string.IsNullOrWhiteSpace(address))
         {
-            filter &= filterBuilder.Regex(p => p.AddressProperty, 
-                new MongoDB.Bson.BsonRegularExpression(address, "i"));
+            matchFilters.Add(new MongoDB.Bson.BsonDocument("addressProperty", 
+                new MongoDB.Bson.BsonRegularExpression(address, "i")));
         }
 
         if (minPrice.HasValue)
         {
-            filter &= filterBuilder.Gte(p => p.PriceProperty, minPrice.Value);
+            matchFilters.Add(new MongoDB.Bson.BsonDocument("priceProperty", 
+                new MongoDB.Bson.BsonDocument("$gte", minPrice.Value)));
         }
 
         if (maxPrice.HasValue)
         {
-            filter &= filterBuilder.Lte(p => p.PriceProperty, maxPrice.Value);
+            matchFilters.Add(new MongoDB.Bson.BsonDocument("priceProperty", 
+                new MongoDB.Bson.BsonDocument("$lte", maxPrice.Value)));
         }
 
-        var total = await _properties.CountDocumentsAsync(filter);
-        var totalPages = (int)Math.Ceiling(total / (double)pageSize);
+        var matchStage = matchFilters.Any() 
+            ? new MongoDB.Bson.BsonDocument("$match", new MongoDB.Bson.BsonDocument("$and", 
+                new MongoDB.Bson.BsonArray(matchFilters)))
+            : new MongoDB.Bson.BsonDocument("$match", new MongoDB.Bson.BsonDocument());
 
-        var properties = await _properties
-            .Find(filter)
-            .Skip((page - 1) * pageSize)
-            .Limit(pageSize)
-            .ToListAsync();
-
-        // Load owners and images for each property
-        foreach (var property in properties)
+        // Pipeline de agregación optimizado
+        var pipeline = new[]
         {
-            property.Owner = await _owners.Find(o => o.IdOwner == property.IdOwner).FirstOrDefaultAsync();
-            property.Images = await _images.Find(i => i.IdProperty == property.Id).ToListAsync();
-        }
+            matchStage,
+            new MongoDB.Bson.BsonDocument("$lookup", new MongoDB.Bson.BsonDocument
+            {
+                { "from", "Owners" },
+                { "localField", "idOwner" },
+                { "foreignField", "_id" },
+                { "as", "owner" }
+            }),
+            new MongoDB.Bson.BsonDocument("$lookup", new MongoDB.Bson.BsonDocument
+            {
+                { "from", "PropertyImages" },
+                { "localField", "_id" },
+                { "foreignField", "idProperty" },
+                { "as", "images" }
+            }),
+            new MongoDB.Bson.BsonDocument("$lookup", new MongoDB.Bson.BsonDocument
+            {
+                { "from", "PropertyTraces" },
+                { "localField", "_id" },
+                { "foreignField", "idProperty" },
+                { "as", "traces" }
+            }),
+            new MongoDB.Bson.BsonDocument("$addFields", new MongoDB.Bson.BsonDocument
+            {
+                { "owner", new MongoDB.Bson.BsonDocument("$arrayElemAt", 
+                    new MongoDB.Bson.BsonArray { "$owner", 0 }) }
+            }),
+            new MongoDB.Bson.BsonDocument("$facet", new MongoDB.Bson.BsonDocument
+            {
+                { "data", new MongoDB.Bson.BsonArray
+                {
+                    new MongoDB.Bson.BsonDocument("$skip", (page - 1) * pageSize),
+                    new MongoDB.Bson.BsonDocument("$limit", pageSize)
+                }},
+                { "totalCount", new MongoDB.Bson.BsonArray
+                {
+                    new MongoDB.Bson.BsonDocument("$count", "count")
+                }}
+            })
+        };
+
+        var result = await _properties.Aggregate<MongoDB.Bson.BsonDocument>(pipeline).FirstOrDefaultAsync();
+        
+        var data = result["data"].AsBsonArray.Select(d => MongoDB.Bson.Serialization.BsonSerializer.Deserialize<Property>(d.AsBsonDocument)).ToList();
+        var total = result["totalCount"].AsBsonArray.FirstOrDefault()?["count"]?.AsInt32 ?? 0;
+        var totalPages = (int)Math.Ceiling(total / (double)pageSize);
 
         return new PagedResult<Property>
         {
-            Data = properties,
-            Total = (int)total,
+            Data = data,
+            Total = total,
             Page = page,
             PageSize = pageSize,
             TotalPages = totalPages,
@@ -84,15 +125,43 @@ public class PropertyService : IPropertyService
 
     public async Task<Property?> GetPropertyByIdAsync(string id)
     {
-        var property = await _properties.Find(p => p.Id == id).FirstOrDefaultAsync();
+        var pipeline = new[]
+        {
+            new MongoDB.Bson.BsonDocument("$match", new MongoDB.Bson.BsonDocument("_id", 
+                MongoDB.Bson.ObjectId.Parse(id))),
+            new MongoDB.Bson.BsonDocument("$lookup", new MongoDB.Bson.BsonDocument
+            {
+                { "from", "Owners" },
+                { "localField", "idOwner" },
+                { "foreignField", "_id" },
+                { "as", "owner" }
+            }),
+            new MongoDB.Bson.BsonDocument("$lookup", new MongoDB.Bson.BsonDocument
+            {
+                { "from", "PropertyImages" },
+                { "localField", "_id" },
+                { "foreignField", "idProperty" },
+                { "as", "images" }
+            }),
+            new MongoDB.Bson.BsonDocument("$lookup", new MongoDB.Bson.BsonDocument
+            {
+                { "from", "PropertyTraces" },
+                { "localField", "_id" },
+                { "foreignField", "idProperty" },
+                { "as", "traces" }
+            }),
+            new MongoDB.Bson.BsonDocument("$addFields", new MongoDB.Bson.BsonDocument
+            {
+                { "owner", new MongoDB.Bson.BsonDocument("$arrayElemAt", 
+                    new MongoDB.Bson.BsonArray { "$owner", 0 }) }
+            })
+        };
+
+        var result = await _properties.Aggregate<MongoDB.Bson.BsonDocument>(pipeline).FirstOrDefaultAsync();
         
-        if (property == null)
+        if (result == null)
             return null;
 
-        property.Owner = await _owners.Find(o => o.IdOwner == property.IdOwner).FirstOrDefaultAsync();
-        property.Images = await _images.Find(i => i.IdProperty == property.Id).ToListAsync();
-        property.Traces = await _traces.Find(t => t.IdProperty == property.Id).ToListAsync();
-
-        return property;
+        return MongoDB.Bson.Serialization.BsonSerializer.Deserialize<Property>(result);
     }
 }
