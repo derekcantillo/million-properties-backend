@@ -28,6 +28,7 @@ public class PropertyService : IPropertyService
         int page = 1,
         int pageSize = 10)
     {
+        // Construir filtros usando el builder de MongoDB
         var filterBuilder = Builders<Property>.Filter;
         var filter = filterBuilder.Empty;
 
@@ -53,25 +54,37 @@ public class PropertyService : IPropertyService
             filter &= filterBuilder.Lte(p => p.PriceProperty, maxPrice.Value);
         }
 
+        // Obtener total de registros
         var total = await _properties.CountDocumentsAsync(filter);
         var totalPages = (int)Math.Ceiling(total / (double)pageSize);
 
+        // Obtener propiedades con paginación
         var properties = await _properties
             .Find(filter)
             .Skip((page - 1) * pageSize)
             .Limit(pageSize)
             .ToListAsync();
 
-        // Load owners and images for each property
+        // Cargar datos relacionados de forma individual para evitar problemas de deserialización
+        var resultProperties = new List<Property>();
+        
         foreach (var property in properties)
         {
+            // Cargar owner
             property.Owner = await _owners.Find(o => o.IdOwner == property.IdOwner).FirstOrDefaultAsync();
+            
+            // Cargar imágenes
             property.Images = await _images.Find(i => i.IdProperty == property.Id).ToListAsync();
+            
+            // Cargar trazas
+            property.Traces = await _traces.Find(t => t.IdProperty == property.Id).ToListAsync();
+            
+            resultProperties.Add(property);
         }
 
         return new PagedResult<Property>
         {
-            Data = properties,
+            Data = resultProperties,
             Total = (int)total,
             Page = page,
             PageSize = pageSize,
@@ -89,6 +102,7 @@ public class PropertyService : IPropertyService
         if (property == null)
             return null;
 
+        // Cargar datos relacionados
         property.Owner = await _owners.Find(o => o.IdOwner == property.IdOwner).FirstOrDefaultAsync();
         property.Images = await _images.Find(i => i.IdProperty == property.Id).ToListAsync();
         property.Traces = await _traces.Find(t => t.IdProperty == property.Id).ToListAsync();

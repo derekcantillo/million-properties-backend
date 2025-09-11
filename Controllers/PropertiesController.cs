@@ -5,7 +5,7 @@ using MillionProperties.Api.Services;
 namespace MillionProperties.Api.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/properties")]
 public class PropertiesController : ControllerBase
 {
     private readonly IPropertyService _propertyService;

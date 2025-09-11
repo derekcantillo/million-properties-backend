@@ -11,33 +11,42 @@ public class Property
     [JsonPropertyName("id")]
     public string Id { get; set; } = null!;
     
+    [BsonElement("idOwner")]
     [BsonRepresentation(BsonType.ObjectId)]
     [JsonPropertyName("idOwner")]
     public string IdOwner { get; set; } = null!;
     
+    [BsonElement("name")]
     [JsonPropertyName("name")]
     public string Name { get; set; } = null!;
     
+    [BsonElement("addressProperty")]
     [JsonPropertyName("addressProperty")]
     public string AddressProperty { get; set; } = null!;
     
+    [BsonElement("priceProperty")]
     [JsonPropertyName("priceProperty")]
     public decimal PriceProperty { get; set; }
     
+    [BsonElement("codeInternal")]
     [JsonPropertyName("codeInternal")]
     public string CodeInternal { get; set; } = null!;
     
+    [BsonElement("year")]
     [JsonPropertyName("year")]
     public int Year { get; set; }
     
+    [BsonElement("owner")]
     [BsonIgnoreIfNull]
     [JsonPropertyName("owner")]
     public Owner? Owner { get; set; }
     
+    [BsonElement("images")]
     [BsonIgnoreIfNull]
     [JsonPropertyName("images")]
     public List<PropertyImage>? Images { get; set; }
     
+    [BsonElement("traces")]
     [BsonIgnoreIfNull]
     [JsonPropertyName("traces")]
     public List<PropertyTrace>? Traces { get; set; }
