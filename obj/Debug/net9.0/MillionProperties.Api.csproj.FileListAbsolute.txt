@@ -13,6 +13,9 @@
 /Users/derek/Documents/Projects/MillionProperties.Api/bin/Debug/net9.0/MongoDB.Driver.dll
 /Users/derek/Documents/Projects/MillionProperties.Api/bin/Debug/net9.0/SharpCompress.dll
 /Users/derek/Documents/Projects/MillionProperties.Api/bin/Debug/net9.0/Snappier.dll
+/Users/derek/Documents/Projects/MillionProperties.Api/bin/Debug/net9.0/Swashbuckle.AspNetCore.Swagger.dll
+/Users/derek/Documents/Projects/MillionProperties.Api/bin/Debug/net9.0/Swashbuckle.AspNetCore.SwaggerGen.dll
+/Users/derek/Documents/Projects/MillionProperties.Api/bin/Debug/net9.0/Swashbuckle.AspNetCore.SwaggerUI.dll
 /Users/derek/Documents/Projects/MillionProperties.Api/bin/Debug/net9.0/ZstdSharp.dll
 /Users/derek/Documents/Projects/MillionProperties.Api/obj/Debug/net9.0/MillionProperties.Api.csproj.AssemblyReference.cache
 /Users/derek/Documents/Projects/MillionProperties.Api/obj/Debug/net9.0/rpswa.dswa.cache.json
@@ -22,6 +25,7 @@
 /Users/derek/Documents/Projects/MillionProperties.Api/obj/Debug/net9.0/MillionProperties.Api.csproj.CoreCompileInputs.cache
 /Users/derek/Documents/Projects/MillionProperties.Api/obj/Debug/net9.0/MillionProperties.Api.MvcApplicationPartsAssemblyInfo.cs
 /Users/derek/Documents/Projects/MillionProperties.Api/obj/Debug/net9.0/MillionProperties.Api.MvcApplicationPartsAssemblyInfo.cache
+/Users/derek/Documents/Projects/MillionProperties.Api/obj/Debug/net9.0/MillionProperties.Api.sourcelink.json
 /Users/derek/Documents/Projects/MillionProperties.Api/obj/Debug/net9.0/rjimswa.dswa.cache.json
 /Users/derek/Documents/Projects/MillionProperties.Api/obj/Debug/net9.0/rjsmrazor.dswa.cache.json
 /Users/derek/Documents/Projects/MillionProperties.Api/obj/Debug/net9.0/rjsmcshtml.dswa.cache.json
@@ -36,4 +40,3 @@
 /Users/derek/Documents/Projects/MillionProperties.Api/obj/Debug/net9.0/MillionProperties.Api.pdb
 /Users/derek/Documents/Projects/MillionProperties.Api/obj/Debug/net9.0/MillionProperties.Api.genruntimeconfig.cache
 /Users/derek/Documents/Projects/MillionProperties.Api/obj/Debug/net9.0/ref/MillionProperties.Api.dll
-/Users/derek/Documents/Projects/MillionProperties.Api/obj/Debug/net9.0/MillionProperties.Api.sourcelink.json
