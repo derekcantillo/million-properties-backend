@@ -1,6 +1,15 @@
 @MillionProperties.Api_HostAddress = http://localhost:5058
 
-GET {{MillionProperties.Api_HostAddress}}/weatherforecast/
+### Get Properties with pagination
+GET {{MillionProperties.Api_HostAddress}}/api/properties?page=1&pageSize=10
+Accept: application/json
+
+### Get Properties with filters
+GET {{MillionProperties.Api_HostAddress}}/api/properties?name=Weston&minPrice=1000000&maxPrice=2000000
+Accept: application/json
+
+### Get Property by ID
+GET {{MillionProperties.Api_HostAddress}}/api/properties/{{propertyId}}
 Accept: application/json
 
 ###

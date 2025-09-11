@@ -28,92 +28,97 @@ public class PropertyService : IPropertyService
         int page = 1,
         int pageSize = 10)
     {
-        // Construir filtros para el match stage
-        var matchFilters = new List<MongoDB.Bson.BsonDocument>();
-        
+        // Construir filtros usando el builder de MongoDB
+        var filterBuilder = Builders<Property>.Filter;
+        var filter = filterBuilder.Empty;
+
         if (!string.IsNullOrWhiteSpace(name))
         {
-            matchFilters.Add(new MongoDB.Bson.BsonDocument("name", 
-                new MongoDB.Bson.BsonRegularExpression(name, "i")));
+            filter &= filterBuilder.Regex(p => p.Name, 
+                new MongoDB.Bson.BsonRegularExpression(name, "i"));
         }
 
         if (!string.IsNullOrWhiteSpace(address))
         {
-            matchFilters.Add(new MongoDB.Bson.BsonDocument("addressProperty", 
-                new MongoDB.Bson.BsonRegularExpression(address, "i")));
+            filter &= filterBuilder.Regex(p => p.AddressProperty, 
+                new MongoDB.Bson.BsonRegularExpression(address, "i"));
         }
 
         if (minPrice.HasValue)
         {
-            matchFilters.Add(new MongoDB.Bson.BsonDocument("priceProperty", 
-                new MongoDB.Bson.BsonDocument("$gte", minPrice.Value)));
+            filter &= filterBuilder.Gte(p => p.PriceProperty, minPrice.Value);
         }
 
         if (maxPrice.HasValue)
         {
-            matchFilters.Add(new MongoDB.Bson.BsonDocument("priceProperty", 
-                new MongoDB.Bson.BsonDocument("$lte", maxPrice.Value)));
+            filter &= filterBuilder.Lte(p => p.PriceProperty, maxPrice.Value);
         }
 
-        var matchStage = matchFilters.Any() 
-            ? new MongoDB.Bson.BsonDocument("$match", new MongoDB.Bson.BsonDocument("$and", 
-                new MongoDB.Bson.BsonArray(matchFilters)))
-            : new MongoDB.Bson.BsonDocument("$match", new MongoDB.Bson.BsonDocument());
-
-        // Pipeline de agregación optimizado
-        var pipeline = new[]
-        {
-            matchStage,
-            new MongoDB.Bson.BsonDocument("$lookup", new MongoDB.Bson.BsonDocument
-            {
-                { "from", "Owners" },
-                { "localField", "idOwner" },
-                { "foreignField", "_id" },
-                { "as", "owner" }
-            }),
-            new MongoDB.Bson.BsonDocument("$lookup", new MongoDB.Bson.BsonDocument
-            {
-                { "from", "PropertyImages" },
-                { "localField", "_id" },
-                { "foreignField", "idProperty" },
-                { "as", "images" }
-            }),
-            new MongoDB.Bson.BsonDocument("$lookup", new MongoDB.Bson.BsonDocument
-            {
-                { "from", "PropertyTraces" },
-                { "localField", "_id" },
-                { "foreignField", "idProperty" },
-                { "as", "traces" }
-            }),
-            new MongoDB.Bson.BsonDocument("$addFields", new MongoDB.Bson.BsonDocument
-            {
-                { "owner", new MongoDB.Bson.BsonDocument("$arrayElemAt", 
-                    new MongoDB.Bson.BsonArray { "$owner", 0 }) }
-            }),
-            new MongoDB.Bson.BsonDocument("$facet", new MongoDB.Bson.BsonDocument
-            {
-                { "data", new MongoDB.Bson.BsonArray
-                {
-                    new MongoDB.Bson.BsonDocument("$skip", (page - 1) * pageSize),
-                    new MongoDB.Bson.BsonDocument("$limit", pageSize)
-                }},
-                { "totalCount", new MongoDB.Bson.BsonArray
-                {
-                    new MongoDB.Bson.BsonDocument("$count", "count")
-                }}
-            })
-        };
-
-        var result = await _properties.Aggregate<MongoDB.Bson.BsonDocument>(pipeline).FirstOrDefaultAsync();
-        
-        var data = result["data"].AsBsonArray.Select(d => MongoDB.Bson.Serialization.BsonSerializer.Deserialize<Property>(d.AsBsonDocument)).ToList();
-        var total = result["totalCount"].AsBsonArray.FirstOrDefault()?["count"]?.AsInt32 ?? 0;
+        // Obtener total de registros
+        var total = await _properties.CountDocumentsAsync(filter);
         var totalPages = (int)Math.Ceiling(total / (double)pageSize);
+
+        // Obtener propiedades con paginación
+        var properties = await _properties
+            .Find(filter)
+            .Skip((page - 1) * pageSize)
+            .Limit(pageSize)
+            .ToListAsync();
+
+        // Cargar datos relacionados usando aggregation pipeline para cada propiedad
+        var resultProperties = new List<Property>();
+        
+        foreach (var property in properties)
+        {
+            var pipeline = new[]
+            {
+                new MongoDB.Bson.BsonDocument("$match", new MongoDB.Bson.BsonDocument("_id", 
+                    MongoDB.Bson.ObjectId.Parse(property.Id))),
+                new MongoDB.Bson.BsonDocument("$lookup", new MongoDB.Bson.BsonDocument
+                {
+                    { "from", "Owners" },
+                    { "localField", "idOwner" },
+                    { "foreignField", "_id" },
+                    { "as", "owner" }
+                }),
+                new MongoDB.Bson.BsonDocument("$lookup", new MongoDB.Bson.BsonDocument
+                {
+                    { "from", "PropertyImages" },
+                    { "localField", "_id" },
+                    { "foreignField", "idProperty" },
+                    { "as", "images" }
+                }),
+                new MongoDB.Bson.BsonDocument("$lookup", new MongoDB.Bson.BsonDocument
+                {
+                    { "from", "PropertyTraces" },
+                    { "localField", "_id" },
+                    { "foreignField", "idProperty" },
+                    { "as", "traces" }
+                }),
+                new MongoDB.Bson.BsonDocument("$addFields", new MongoDB.Bson.BsonDocument
+                {
+                    { "owner", new MongoDB.Bson.BsonDocument("$arrayElemAt", 
+                        new MongoDB.Bson.BsonArray { "$owner", 0 }) }
+                })
+            };
+
+            var result = await _properties.Aggregate<MongoDB.Bson.BsonDocument>(pipeline).FirstOrDefaultAsync();
+            
+            if (result != null)
+            {
+                var fullProperty = MongoDB.Bson.Serialization.BsonSerializer.Deserialize<Property>(result);
+                resultProperties.Add(fullProperty);
+            }
+            else
+            {
+                resultProperties.Add(property);
+            }
+        }
 
         return new PagedResult<Property>
         {
-            Data = data,
-            Total = total,
+            Data = resultProperties,
+            Total = (int)total,
             Page = page,
             PageSize = pageSize,
             TotalPages = totalPages,
