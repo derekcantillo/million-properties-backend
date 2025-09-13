@@ -1,7 +1,7 @@
 {
     "Environment": "dev",
     "StackName":"million-properties",
-    "VPCId":"vpc-0600df36a3f87f4a2",
-    "PrivateSubnetOne":"subnet-0d32f35ecf5a4904a",
-    "PrivateSubnetTwo":"subnet-002c3218519258210"
+    "VPCId":"vpc-01d149d8a3b5e290c",
+    "PrivateSubnetOne":"subnet-0c91c0f46bf2d35b5",
+    "PrivateSubnetTwo":"subnet-09014c2f0de7bcebb"
 }
