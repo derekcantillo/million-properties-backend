@@ -20,6 +20,10 @@ public class Property
     [JsonPropertyName("name")]
     public string Name { get; set; } = null!;
     
+    [BsonElement("slug")]
+    [JsonPropertyName("slug")]
+    public string Slug { get; set; } = null!;
+    
     [BsonElement("addressProperty")]
     [JsonPropertyName("addressProperty")]
     public string AddressProperty { get; set; } = null!;

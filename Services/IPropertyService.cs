@@ -10,7 +10,11 @@ public interface IPropertyService
         decimal? minPrice = null,
         decimal? maxPrice = null,
         int page = 1,
-        int pageSize = 10);
+        int pageSize = 10,
+        string? sortBy = null,
+        string? sortDir = null);
         
     Task<Property?> GetPropertyByIdAsync(string id);
+
+    Task<Property?> GetPropertyBySlugAsync(string slug);
 }

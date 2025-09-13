@@ -22,21 +22,23 @@ public class PropertiesController : ControllerBase
         [FromQuery] decimal? minPrice,
         [FromQuery] decimal? maxPrice,
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 10)
+        [FromQuery] int pageSize = 10,
+        [FromQuery] string? sortBy = null,
+        [FromQuery] string? sortDir = null)
     {
         if (page < 1 || pageSize < 1)
             return BadRequest("Invalid pagination parameters");
 
         var result = await _propertyService.GetPropertiesAsync(
-            name, address, minPrice, maxPrice, page, pageSize);
+            name, address, minPrice, maxPrice, page, pageSize, sortBy, sortDir);
             
         return Ok(result);
     }
 
-    [HttpGet("{id}")]
-    public async Task<ActionResult<Property>> GetProperty(string id)
+    [HttpGet("{slug}")]
+    public async Task<ActionResult<Property>> GetProperty(string slug)
     {
-        var property = await _propertyService.GetPropertyByIdAsync(id);
+        var property = await _propertyService.GetPropertyBySlugAsync(slug);
         
         if (property == null)
             return NotFound();

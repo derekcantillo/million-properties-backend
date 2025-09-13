@@ -26,7 +26,9 @@ public class PropertyService : IPropertyService
         decimal? minPrice = null,
         decimal? maxPrice = null,
         int page = 1,
-        int pageSize = 10)
+        int pageSize = 10,
+        string? sortBy = null,
+        string? sortDir = null)
     {
         var filterBuilder = Builders<Property>.Filter;
         var filter = filterBuilder.Empty;
@@ -56,8 +58,46 @@ public class PropertyService : IPropertyService
         var total = await _properties.CountDocumentsAsync(filter);
         var totalPages = (int)Math.Ceiling(total / (double)pageSize);
 
-        var properties = await _properties
-            .Find(filter)
+        var findFluent = _properties.Find(filter);
+
+        // Normalize sort inputs
+        var normalizedSortBy = sortBy?.Trim();
+        var isDescending = string.Equals(sortDir, "desc", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(sortDir, "descending", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(sortDir, "-1", StringComparison.OrdinalIgnoreCase);
+
+        if (!string.IsNullOrWhiteSpace(normalizedSortBy) && normalizedSortBy!.StartsWith('-'))
+        {
+            // Allow leading '-' to indicate descending
+            isDescending = true;
+            normalizedSortBy = normalizedSortBy.Substring(1);
+        }
+
+        // If only direction provided, default to price
+        if (string.IsNullOrWhiteSpace(normalizedSortBy) && !string.IsNullOrWhiteSpace(sortDir))
+        {
+            normalizedSortBy = "price";
+        }
+
+        if (!string.IsNullOrWhiteSpace(normalizedSortBy))
+        {
+            switch (normalizedSortBy!.ToLowerInvariant())
+            {
+                case "name":
+                    findFluent = isDescending
+                        ? findFluent.SortByDescending(p => p.Name)
+                        : findFluent.SortBy(p => p.Name);
+                    break;
+                case "price":
+                case "priceproperty":
+                    findFluent = isDescending
+                        ? findFluent.SortByDescending(p => p.PriceProperty)
+                        : findFluent.SortBy(p => p.PriceProperty);
+                    break;
+            }
+        }
+
+        var properties = await findFluent
             .Skip((page - 1) * pageSize)
             .Limit(pageSize)
             .ToListAsync();
@@ -91,6 +131,20 @@ public class PropertyService : IPropertyService
     public async Task<Property?> GetPropertyByIdAsync(string id)
     {
         var property = await _properties.Find(p => p.Id == id).FirstOrDefaultAsync();
+        
+        if (property == null)
+            return null;
+
+        property.Owner = await _owners.Find(o => o.IdOwner == property.IdOwner).FirstOrDefaultAsync();
+        property.Images = await _images.Find(i => i.IdProperty == property.Id).ToListAsync();
+        property.Traces = await _traces.Find(t => t.IdProperty == property.Id).ToListAsync();
+
+        return property;
+    }
+
+    public async Task<Property?> GetPropertyBySlugAsync(string slug)
+    {
+        var property = await _properties.Find(p => p.Slug == slug).FirstOrDefaultAsync();
         
         if (property == null)
             return null;

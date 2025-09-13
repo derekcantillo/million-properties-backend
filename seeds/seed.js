@@ -360,6 +360,17 @@ const owners = [
 
 db.Owners.insertMany(owners);
 
+function slugify(text) {
+  return text
+    .toString()
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s-]/g, '')
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-');
+}
+
 const properties = [
   {
     _id: ObjectId(),
@@ -368,7 +379,8 @@ const properties = [
     addressProperty: "101 Main St, Weston, FL",
     priceProperty: 1660328,
     codeInternal: "PROP-001",
-    year: 2011
+    year: 2011,
+    slug: slugify("Propiedad en Weston #1")
   },
   {
     _id: ObjectId(),
@@ -377,7 +389,8 @@ const properties = [
     addressProperty: "102 Main St, Aventura, FL",
     priceProperty: 1993413,
     codeInternal: "PROP-002",
-    year: 2015
+    year: 2015,
+    slug: slugify("Propiedad en Aventura #2")
   },
   {
     _id: ObjectId(),
@@ -386,7 +399,8 @@ const properties = [
     addressProperty: "103 Main St, Edgewater, FL",
     priceProperty: 2194525,
     codeInternal: "PROP-003",
-    year: 1996
+    year: 1996,
+    slug: slugify("Propiedad en Edgewater #3")
   },
   {
     _id: ObjectId(),
@@ -395,7 +409,8 @@ const properties = [
     addressProperty: "104 Main St, Kendall, FL",
     priceProperty: 291126,
     codeInternal: "PROP-004",
-    year: 2021
+    year: 2021,
+    slug: slugify("Propiedad en Kendall #4")
   },
   {
     _id: ObjectId(),
@@ -404,7 +419,8 @@ const properties = [
     addressProperty: "105 Main St, Coconut Grove, FL",
     priceProperty: 4299923,
     codeInternal: "PROP-005",
-    year: 2001
+    year: 2001,
+    slug: slugify("Propiedad en Coconut Grove #5")
   },
   {
     _id: ObjectId(),
@@ -413,7 +429,8 @@ const properties = [
     addressProperty: "106 Main St, Brickell, FL",
     priceProperty: 4403533,
     codeInternal: "PROP-006",
-    year: 2003
+    year: 2003,
+    slug: slugify("Propiedad en Brickell #6")
   },
   {
     _id: ObjectId(),
@@ -422,7 +439,8 @@ const properties = [
     addressProperty: "107 Main St, Surfside, FL",
     priceProperty: 3837594,
     codeInternal: "PROP-007",
-    year: 1997
+    year: 1997,
+    slug: slugify("Propiedad en Surfside #7")
   },
   {
     _id: ObjectId(),
@@ -431,7 +449,8 @@ const properties = [
     addressProperty: "108 Main St, Miami Lakes, FL",
     priceProperty: 1700100,
     codeInternal: "PROP-008",
-    year: 2000
+    year: 2000,
+    slug: slugify("Propiedad en Miami Lakes #8")
   },
   {
     _id: ObjectId(),
@@ -440,7 +459,8 @@ const properties = [
     addressProperty: "109 Main St, Edgewater, FL",
     priceProperty: 4550498,
     codeInternal: "PROP-009",
-    year: 2021
+    year: 2021,
+    slug: slugify("Propiedad en Edgewater #9")
   },
   {
     _id: ObjectId(),
@@ -449,7 +469,8 @@ const properties = [
     addressProperty: "110 Main St, Surfside, FL",
     priceProperty: 1510260,
     codeInternal: "PROP-010",
-    year: 1995
+    year: 1995,
+    slug: slugify("Propiedad en Surfside #10")
   },
   {
     _id: ObjectId(),
@@ -458,7 +479,8 @@ const properties = [
     addressProperty: "111 Main St, Kendall, FL",
     priceProperty: 971661,
     codeInternal: "PROP-011",
-    year: 2023
+    year: 2023,
+    slug: slugify("Propiedad en Kendall #11")
   },
   {
     _id: ObjectId(),
@@ -467,7 +489,8 @@ const properties = [
     addressProperty: "112 Main St, Sunny Isles, FL",
     priceProperty: 4054743,
     codeInternal: "PROP-012",
-    year: 2008
+    year: 2008,
+    slug: slugify("Propiedad en Sunny Isles #12")
   },
   {
     _id: ObjectId(),
@@ -476,7 +499,8 @@ const properties = [
     addressProperty: "113 Main St, Hallandale Beach, FL",
     priceProperty: 1685693,
     codeInternal: "PROP-013",
-    year: 2007
+    year: 2007,
+    slug: slugify("Propiedad en Hallandale Beach #13")
   },
   {
     _id: ObjectId(),
@@ -485,7 +509,8 @@ const properties = [
     addressProperty: "114 Main St, Golden Beach, FL",
     priceProperty: 3175993,
     codeInternal: "PROP-014",
-    year: 2009
+    year: 2009,
+    slug: slugify("Propiedad en Golden Beach #14")
   },
   {
     _id: ObjectId(),
@@ -494,7 +519,8 @@ const properties = [
     addressProperty: "115 Main St, Coconut Grove, FL",
     priceProperty: 3911557,
     codeInternal: "PROP-015",
-    year: 1996
+    year: 1996,
+    slug: slugify("Propiedad en Coconut Grove #15")
   },
   {
     _id: ObjectId(),
@@ -503,7 +529,8 @@ const properties = [
     addressProperty: "116 Main St, Miami, FL",
     priceProperty: 569513,
     codeInternal: "PROP-016",
-    year: 1994
+    year: 1994,
+    slug: slugify("Propiedad en Miami #16")
   },
   {
     _id: ObjectId(),
@@ -512,7 +539,8 @@ const properties = [
     addressProperty: "117 Main St, Kendall, FL",
     priceProperty: 3610728,
     codeInternal: "PROP-017",
-    year: 1997
+    year: 1997,
+    slug: slugify("Propiedad en Kendall #17")
   },
   {
     _id: ObjectId(),
@@ -521,7 +549,8 @@ const properties = [
     addressProperty: "118 Main St, Design District, FL",
     priceProperty: 4140520,
     codeInternal: "PROP-018",
-    year: 2023
+    year: 2023,
+    slug: slugify("Propiedad en Design District #18")
   },
   {
     _id: ObjectId(),
@@ -530,7 +559,8 @@ const properties = [
     addressProperty: "119 Main St, Little Havana, FL",
     priceProperty: 3288239,
     codeInternal: "PROP-019",
-    year: 1990
+    year: 1990,
+    slug: slugify("Propiedad en Little Havana #19")
   },
   {
     _id: ObjectId(),
@@ -539,7 +569,8 @@ const properties = [
     addressProperty: "120 Main St, Edgewater, FL",
     priceProperty: 731230,
     codeInternal: "PROP-020",
-    year: 2017
+    year: 2017,
+    slug: slugify("Propiedad en Edgewater #20")
   },
   {
     _id: ObjectId(),
@@ -548,7 +579,8 @@ const properties = [
     addressProperty: "121 Main St, Aventura, FL",
     priceProperty: 3166873,
     codeInternal: "PROP-021",
-    year: 2010
+    year: 2010,
+    slug: slugify("Propiedad en Aventura #21")
   },
   {
     _id: ObjectId(),
@@ -557,7 +589,8 @@ const properties = [
     addressProperty: "122 Main St, Hallandale Beach, FL",
     priceProperty: 2498103,
     codeInternal: "PROP-022",
-    year: 1994
+    year: 1994,
+    slug: slugify("Propiedad en Hallandale Beach #22")
   },
   {
     _id: ObjectId(),
@@ -566,7 +599,8 @@ const properties = [
     addressProperty: "123 Main St, Design District, FL",
     priceProperty: 4999904,
     codeInternal: "PROP-023",
-    year: 1993
+    year: 1993,
+    slug: slugify("Propiedad en Design District #23")
   },
   {
     _id: ObjectId(),
@@ -575,7 +609,8 @@ const properties = [
     addressProperty: "124 Main St, Homestead, FL",
     priceProperty: 539633,
     codeInternal: "PROP-024",
-    year: 2007
+    year: 2007,
+    slug: slugify("Propiedad en Homestead #24")
   },
   {
     _id: ObjectId(),
@@ -584,7 +619,8 @@ const properties = [
     addressProperty: "125 Main St, Coral Gables, FL",
     priceProperty: 3546477,
     codeInternal: "PROP-025",
-    year: 2000
+    year: 2000,
+    slug: slugify("Propiedad en Coral Gables #25")
   },
   {
     _id: ObjectId(),
@@ -593,7 +629,8 @@ const properties = [
     addressProperty: "126 Main St, Design District, FL",
     priceProperty: 4453998,
     codeInternal: "PROP-026",
-    year: 2007
+    year: 2007,
+    slug: slugify("Propiedad en Design District #26")
   },
   {
     _id: ObjectId(),
@@ -602,7 +639,8 @@ const properties = [
     addressProperty: "127 Main St, Bal Harbour, FL",
     priceProperty: 4810389,
     codeInternal: "PROP-027",
-    year: 2012
+    year: 2012,
+    slug: slugify("Propiedad en Bal Harbour #27")
   },
   {
     _id: ObjectId(),
@@ -611,7 +649,8 @@ const properties = [
     addressProperty: "128 Main St, Doral, FL",
     priceProperty: 782630,
     codeInternal: "PROP-028",
-    year: 2007
+    year: 2007,
+    slug: slugify("Propiedad en Doral #28")
   },
   {
     _id: ObjectId(),
@@ -620,7 +659,8 @@ const properties = [
     addressProperty: "129 Main St, Sunny Isles, FL",
     priceProperty: 1061222,
     codeInternal: "PROP-029",
-    year: 2023
+    year: 2023,
+    slug: slugify("Propiedad en Sunny Isles #29")
   },
   {
     _id: ObjectId(),
@@ -629,7 +669,8 @@ const properties = [
     addressProperty: "130 Main St, Bal Harbour, FL",
     priceProperty: 912603,
     codeInternal: "PROP-030",
-    year: 2014
+    year: 2014,
+    slug: slugify("Propiedad en Bal Harbour #30")
   },
   {
     _id: ObjectId(),
@@ -638,7 +679,8 @@ const properties = [
     addressProperty: "131 Main St, Doral, FL",
     priceProperty: 1139943,
     codeInternal: "PROP-031",
-    year: 2003
+    year: 2003,
+    slug: slugify("Propiedad en Doral #31")
   },
   {
     _id: ObjectId(),
@@ -647,7 +689,8 @@ const properties = [
     addressProperty: "132 Main St, Bal Harbour, FL",
     priceProperty: 1713943,
     codeInternal: "PROP-032",
-    year: 2000
+    year: 2000,
+    slug: slugify("Propiedad en Bal Harbour #32")
   },
   {
     _id: ObjectId(),
@@ -656,7 +699,8 @@ const properties = [
     addressProperty: "133 Main St, Hollywood, FL",
     priceProperty: 3356088,
     codeInternal: "PROP-033",
-    year: 2001
+    year: 2001,
+    slug: slugify("Propiedad en Hollywood #33")
   },
   {
     _id: ObjectId(),
@@ -665,7 +709,8 @@ const properties = [
     addressProperty: "134 Main St, Little Havana, FL",
     priceProperty: 1925143,
     codeInternal: "PROP-034",
-    year: 1996
+    year: 1996,
+    slug: slugify("Propiedad en Little Havana #34")
   },
   {
     _id: ObjectId(),
@@ -674,7 +719,8 @@ const properties = [
     addressProperty: "135 Main St, Little Havana, FL",
     priceProperty: 1773388,
     codeInternal: "PROP-035",
-    year: 1997
+    year: 1997,
+    slug: slugify("Propiedad en Little Havana #35")
   },
   {
     _id: ObjectId(),
@@ -683,7 +729,8 @@ const properties = [
     addressProperty: "136 Main St, Cutler Bay, FL",
     priceProperty: 2876041,
     codeInternal: "PROP-036",
-    year: 2000
+    year: 2000,
+    slug: slugify("Propiedad en Cutler Bay #36")
   },
   {
     _id: ObjectId(),
@@ -692,7 +739,8 @@ const properties = [
     addressProperty: "137 Main St, Pembroke Pines, FL",
     priceProperty: 4885896,
     codeInternal: "PROP-037",
-    year: 1998
+    year: 1998,
+    slug: slugify("Propiedad en Pembroke Pines #37")
   },
   {
     _id: ObjectId(),
@@ -701,7 +749,8 @@ const properties = [
     addressProperty: "138 Main St, Palmetto Bay, FL",
     priceProperty: 3847185,
     codeInternal: "PROP-038",
-    year: 2009
+    year: 2009,
+    slug: slugify("Propiedad en Palmetto Bay #38")
   },
   {
     _id: ObjectId(),
@@ -710,7 +759,8 @@ const properties = [
     addressProperty: "139 Main St, Kendall, FL",
     priceProperty: 2008418,
     codeInternal: "PROP-039",
-    year: 1995
+    year: 1995,
+    slug: slugify("Propiedad en Kendall #39")
   },
   {
     _id: ObjectId(),
@@ -719,7 +769,8 @@ const properties = [
     addressProperty: "140 Main St, Sunny Isles, FL",
     priceProperty: 4311125,
     codeInternal: "PROP-040",
-    year: 2008
+    year: 2008,
+    slug: slugify("Propiedad en Sunny Isles #40")
   },
   {
     _id: ObjectId(),
@@ -728,7 +779,8 @@ const properties = [
     addressProperty: "141 Main St, Edgewater, FL",
     priceProperty: 3955156,
     codeInternal: "PROP-041",
-    year: 2008
+    year: 2008,
+    slug: slugify("Propiedad en Edgewater #41")
   },
   {
     _id: ObjectId(),
@@ -737,7 +789,8 @@ const properties = [
     addressProperty: "142 Main St, Bal Harbour, FL",
     priceProperty: 2926719,
     codeInternal: "PROP-042",
-    year: 1997
+    year: 1997,
+    slug: slugify("Propiedad en Bal Harbour #42")
   },
   {
     _id: ObjectId(),
@@ -746,7 +799,8 @@ const properties = [
     addressProperty: "143 Main St, Hollywood, FL",
     priceProperty: 2137950,
     codeInternal: "PROP-043",
-    year: 1996
+    year: 1996,
+    slug: slugify("Propiedad en Hollywood #43")
   },
   {
     _id: ObjectId(),
@@ -755,7 +809,8 @@ const properties = [
     addressProperty: "144 Main St, Little Havana, FL",
     priceProperty: 2889999,
     codeInternal: "PROP-044",
-    year: 2021
+    year: 2021,
+    slug: slugify("Propiedad en Little Havana #44")
   },
   {
     _id: ObjectId(),
@@ -764,7 +819,8 @@ const properties = [
     addressProperty: "145 Main St, Coral Springs, FL",
     priceProperty: 3479643,
     codeInternal: "PROP-045",
-    year: 2018
+    year: 2018,
+    slug: slugify("Propiedad en Coral Springs #45")
   },
   {
     _id: ObjectId(),
@@ -773,7 +829,8 @@ const properties = [
     addressProperty: "146 Main St, Coconut Grove, FL",
     priceProperty: 648840,
     codeInternal: "PROP-046",
-    year: 2005
+    year: 2005,
+    slug: slugify("Propiedad en Coconut Grove #46")
   },
   {
     _id: ObjectId(),
@@ -782,7 +839,8 @@ const properties = [
     addressProperty: "147 Main St, Coconut Grove, FL",
     priceProperty: 2481133,
     codeInternal: "PROP-047",
-    year: 1999
+    year: 1999,
+    slug: slugify("Propiedad en Coconut Grove #47")
   },
   {
     _id: ObjectId(),
@@ -791,7 +849,8 @@ const properties = [
     addressProperty: "148 Main St, Miami Lakes, FL",
     priceProperty: 1458232,
     codeInternal: "PROP-048",
-    year: 1994
+    year: 1994,
+    slug: slugify("Propiedad en Miami Lakes #48")
   },
   {
     _id: ObjectId(),
@@ -800,7 +859,8 @@ const properties = [
     addressProperty: "149 Main St, Homestead, FL",
     priceProperty: 501604,
     codeInternal: "PROP-049",
-    year: 2004
+    year: 2004,
+    slug: slugify("Propiedad en Homestead #49")
   },
   {
     _id: ObjectId(),
@@ -809,7 +869,8 @@ const properties = [
     addressProperty: "150 Main St, Pembroke Pines, FL",
     priceProperty: 3670532,
     codeInternal: "PROP-050",
-    year: 2008
+    year: 2008,
+    slug: slugify("Propiedad en Pembroke Pines #50")
   }
 ];
 
@@ -860,6 +921,7 @@ db.Properties.createIndex({ "name": "text", "addressProperty": "text" });
 db.Properties.createIndex({ "priceProperty": 1 });
 db.Properties.createIndex({ "idOwner": 1 });
 db.Properties.createIndex({ "year": 1 });
+db.Properties.createIndex({ "slug": 1 }, { unique: true });
 
 db.PropertyImages.createIndex({ "idProperty": 1 });
 db.PropertyImages.createIndex({ "enabled": 1 });
