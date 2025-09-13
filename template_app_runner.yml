@@ -1,0 +1,192 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: ECS Cluster with Fargate and Load Balancer
+
+Parameters:
+  Environment:
+    Description: Description
+    Type: String
+    Default: Environment
+  StackName:
+    Description: Description
+    Type: String
+    Default: StackName
+  VPCId:
+    Description: Description
+    Type: String
+    Default: VPCId
+  PrivateSubnetOne:
+    Description: Description
+    Type: String
+    Default: PrivateSubnetOne
+  PrivateSubnetTwo:
+    Description: PrivateSubnetTwo
+    Type: String
+    Default: PrivateSubnetTwo
+  EcrRepository:
+    Description: Description
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: EcrRepository
+  Port:
+    Type: Number
+    Description: Port to expose
+    Default: "5058"
+Resources:
+
+  ### ROLE FOR APP RUNNER TO PULL IMAGE FROM ECR ###
+  ECRRepositoryAccessRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Join
+        - "-"
+        - - ECRRole
+          - !Ref Environment
+          - !Select
+            - 0
+            - !Split
+              - "-"
+              - !Select
+                - 2
+                - !Split
+                  - /
+                  - !Ref AWS::StackId
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - build.apprunner.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSAppRunnerServicePolicyForECRAccess
+  ### ROLE FOR THE APP RUNER INSTANCE ###
+  InstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Join
+        - "-"
+        - - InstanceRole
+          - !Ref Environment
+          - !Select
+            - 0
+            - !Split
+              - "-"
+              - !Select
+                - 2
+                - !Split
+                  - /
+                  - !Ref AWS::StackId
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: tasks.apprunner.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
+        - arn:aws:iam::aws:policy/AmazonSNSFullAccess
+        - arn:aws:iam::aws:policy/SecretsManagerReadWrite
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+        - arn:aws:iam::aws:policy/AmazonConnect_FullAccess
+        - arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess
+        - arn:aws:iam::aws:policy/AmazonSQSFullAccess
+      Policies:
+        - PolicyName: AWSCaseCreationPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - cases:CreateCase
+                Resource: "*"
+  SecurityGroupAppRunner:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow inbound traffic on port 5058, 443
+      VpcId: !Ref VPCId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5058
+          ToPort: 5058
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+
+  VpcConnector:
+    Type: AWS::AppRunner::VpcConnector
+    Properties:
+      Subnets:
+        - !Ref PrivateSubnetOne
+        - !Ref PrivateSubnetTwo
+      SecurityGroups:
+        - !Ref SecurityGroupAppRunner
+      Tags:
+        - Key: Name
+          Value: !Ref StackName
+        - Key: Environment
+          Value: !Ref Environment
+
+  ObservabilityConfigurationAppRunner:
+    Type: AWS::AppRunner::ObservabilityConfiguration
+    Properties:
+      TraceConfiguration:
+        Vendor: AWSXRAY
+      Tags:
+        - Key: Name
+          Value: !Ref StackName
+        - Key: Environment
+          Value: !Ref Environment
+  ### APP RUNNER SERVICE ###
+  AppRunnerService:
+    DependsOn:
+      - ECRRepositoryAccessRole
+      - InstanceRole
+    Type: AWS::AppRunner::Service
+    Properties:
+      ServiceName: !Sub ${StackName}-api-${Environment}
+      HealthCheckConfiguration:
+        HealthyThreshold: 2
+        Interval: 10
+        Path: /health/
+        Protocol: HTTP
+        Timeout: 5
+        UnhealthyThreshold: 3
+      NetworkConfiguration:
+        EgressConfiguration:
+          EgressType: VPC
+          VpcConnectorArn: !Ref VpcConnector
+      SourceConfiguration:
+        AuthenticationConfiguration:
+          AccessRoleArn: !GetAtt ECRRepositoryAccessRole.Arn
+        AutoDeploymentsEnabled: true
+        ImageRepository:
+          ImageIdentifier: !Ref EcrRepository
+          ImageRepositoryType: ECR
+          ImageConfiguration:
+            Port: !Ref Port
+      InstanceConfiguration:
+        Cpu: 1 vCPU
+        InstanceRoleArn: !GetAtt InstanceRole.Arn
+        Memory: 2 GB
+      ObservabilityConfiguration:
+        ObservabilityEnabled: true
+        ObservabilityConfigurationArn: !Ref ObservabilityConfigurationAppRunner
+      Tags:
+        - Key: Name
+          Value: !Ref StackName
+        - Key: Environment
+          Value: !Ref Environment
+  ### SAVE APP SERVICE URL IN SSM ###
+  AppRunnerServiceUrl:
+    DependsOn: AppRunnerService
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub /${StackName}/AppRunnerServiceUrl
+      Type: String
+      Value: !Join
+        - ""
+        - - https://
+          - !GetAtt AppRunnerService.ServiceUrl

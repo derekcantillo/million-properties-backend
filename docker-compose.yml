@@ -1,19 +1,20 @@
 version: '3.8'
 
 services:
-  mongodb:
-    image: mongo:7.0
-    container_name: million-properties-mongodb
-    restart: unless-stopped
-    ports:
-      - "27017:27017"
-    environment:
-      MONGO_INITDB_DATABASE: MillionPropertiesDB
-    volumes:
-      - mongodb_data:/data/db
-      - ./seeds:/docker-entrypoint-initdb.d:ro
-    networks:
-      - million-properties-network
+  # MongoDB Atlas is used instead of local MongoDB
+  # mongodb:
+  #   image: mongo:7.0
+  #   container_name: million-properties-mongodb
+  #   restart: unless-stopped
+  #   ports:
+  #     - "27017:27017"
+  #   environment:
+  #     MONGO_INITDB_DATABASE: MillionPropertiesDB
+  #   volumes:
+  #     - mongodb_data:/data/db
+  #     - ./seeds:/docker-entrypoint-initdb.d:ro
+  #   networks:
+  #     - million-properties-network
 
   api:
     build:
@@ -26,10 +27,11 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:5058
-      - MongoDB__ConnectionString=mongodb://mongodb:27017
+      - MongoDB__ConnectionString=mongodb+srv://cantilloderek_db_user:xan4Jh1JaeClIa6C@cluster0.utnsz9w.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
       - MongoDB__DatabaseName=MillionPropertiesDB
-    depends_on:
-      - mongodb
+    # No longer depends on local MongoDB since we're using MongoDB Atlas
+    # depends_on:
+    #   - mongodb
     networks:
       - million-properties-network
 

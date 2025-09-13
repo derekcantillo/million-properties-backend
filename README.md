@@ -485,3 +485,18 @@ export ASPNETCORE_ENVIRONMENT="Production"
 **¡La API está lista para usar! 🎉**
 
 Para más información, consulta la documentación de Swagger en `http://localhost:5058/swagger` cuando la API esté ejecutándose.
+
+
+## Install mongo Linux
+
+# Importar clave GPG
+curl -fsSL https://pgp.mongodb.com/server-7.0.asc | sudo gpg -o /usr/share/keyrings/mongodb-server-7.0.gpg --dearmor
+
+# Agregar repositorio
+echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-7.0.gpg ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/7.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-7.0.list
+
+# Actualizar e instalar
+sudo apt update
+sudo apt install -y mongodb-org
+mongosh "mongodb+srv://cantilloderek_db_user:xan4Jh1JaeClIa6C@cluster0.utnsz9w.mon
+  godb.net/?retryWrites=true&w=majority&appName=Cluster0"
