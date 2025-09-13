@@ -2,6 +2,9 @@
     "Environment": "dev",
     "StackName":"million-properties",
     "VPCId":"vpc-01d149d8a3b5e290c",
+    "PublicSubnetOne":"subnet-08346cb8536f5b6c6",
+    "PublicSubnetTwo":"subnet-0597258d7de962279",
     "PrivateSubnetOne":"subnet-0c91c0f46bf2d35b5",
-    "PrivateSubnetTwo":"subnet-09014c2f0de7bcebb"
+    "PrivateSubnetTwo":"subnet-09014c2f0de7bcebb",
+    "ArnCertificateACM":"arn:aws:acm:us-east-1:818959150672:certificate/ead82b3f-a1e7-4442-90f6-71ad58850918"
 }
