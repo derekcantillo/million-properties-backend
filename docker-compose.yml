@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: million-properties-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: MillionPropertiesDB
+    volumes:
+      - mongodb_data:/data/db
+      - ./seeds:/docker-entrypoint-initdb.d:ro
+    networks:
+      - million-properties-network
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: million-properties-api
+    restart: unless-stopped
+    ports:
+      - "5058:5058"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:5058
+      - MongoDB__ConnectionString=mongodb://mongodb:27017
+      - MongoDB__DatabaseName=MillionPropertiesDB
+    depends_on:
+      - mongodb
+    networks:
+      - million-properties-network
+
+volumes:
+  mongodb_data:
+
+networks:
+  million-properties-network:
+    driver: bridge

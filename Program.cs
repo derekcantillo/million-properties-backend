@@ -27,6 +27,9 @@ builder.Services.AddControllers()
     options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
 });
 
+// Add health checks
+builder.Services.AddHealthChecks();
+
 // Add API Explorer and Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -51,8 +54,15 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+// Only use HTTPS redirection in development (not in containers)
+if (!app.Environment.IsProduction())
+{
+    app.UseHttpsRedirection();
+}
 app.UseAuthorization();
 app.MapControllers();
+
+// Map health check endpoint
+app.MapHealthChecks("/health");
 
 app.Run();
