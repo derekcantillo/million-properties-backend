@@ -1,0 +1,283 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: ECS Cluster with Fargate and Load Balancer
+
+Parameters:
+  Environment:
+    Description: Description
+    Type: String
+    Default: Environment
+  StackName:
+    Description: Description
+    Type: String
+    Default: StackName
+  VPCId:
+    Description: Description
+    Type: String
+    Default: vpc-0600df36a3f87f4a2
+  PublicSubnetOne:
+    Description: Description
+    Type: String
+    Default: subnet-05c2c300dbb0d3805
+  PublicSubnetTwo:
+    Description: PublicSubnetTwo
+    Type: String
+    Default: subnet-03672ca1575cb2bf0
+  PrivateSubnetOne:
+    Description: Description
+    Type: String
+    Default: PrivateSubnetOne
+  PrivateSubnetTwo:
+    Description: PrivateSubnetTwo
+    Type: String
+    Default: PrivateSubnetTwo
+  ArnCertificateACM:
+    Description: PublicSubnetTwo
+    Type: String
+    Default: ArnCertificateACM
+  EcrRepository:
+    Description: Description
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: EcrRepository
+
+Resources:
+
+  PrivateDnsNamespaceVpc:
+    Type: AWS::ServiceDiscovery::PrivateDnsNamespace
+    Properties:
+      Name: !Sub ${StackName}${Environment}PrivateDnsNamespace
+      Vpc: !Ref VPCId
+      Description: "Private DNS namespace for tutorial service discovery"
+
+
+  EcsCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: !Sub "${StackName}${Environment}EcsCluster"
+      Tags:
+        - Key: "Environment"
+          Value: !Ref Environment
+        - Key: "StackName"
+          Value: !Ref StackName
+
+  EcsExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: AmazonECSTaskExecutionRolePolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ecr:GetAuthorizationToken
+                  - ecr:BatchGetImage
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:GetDownloadUrlForLayer
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - s3:ListBucket
+                  - s3:GetObject
+                  - s3:PutObject
+                  - sqs:SendMessage
+                  - sqs:ReceiveMessage
+                  - sqs:DeleteMessage
+                  - sqs:GetQueueAttributes
+                  - dynamodb:CreateTable
+                  - dynamodb:PutItem
+                  - dynamodb:DescribeTable
+                  - dynamodb:DeleteItem
+                  - dynamodb:GetItem
+                  - dynamodb:Scan
+                  - dynamodb:UpdateItem
+                  - dynamodb:Query
+                Resource: "*"
+
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow inbound traffic on port 5058, 8081, 443
+      VpcId: !Ref VPCId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5058
+          ToPort: 5058
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+
+  LoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Sub "${StackName}${Environment}ALB"
+      Subnets:
+        - !Ref PublicSubnetOne
+        - !Ref PublicSubnetTwo
+      SecurityGroups:
+        - !Ref SecurityGroup
+      Scheme: internet-facing
+
+  LoadBalancerListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - Type: fixed-response
+          FixedResponseConfig:
+            StatusCode: 200
+            ContentType: text/plain
+            MessageBody: 'OK'
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 443
+      Protocol: HTTPS
+      SslPolicy: ELBSecurityPolicy-2016-08
+      Certificates:
+        - CertificateArn: !Ref ArnCertificateACM
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref TargetGroup
+
+  #### SERVICE CONFIGURATION
+
+  TaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: !Sub "${StackName}${Environment}TaskFamily"
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      Cpu: "2048"
+      Memory: "4096"
+      ExecutionRoleArn: !GetAtt EcsExecutionRole.Arn
+      TaskRoleArn: !GetAtt EcsExecutionRole.Arn
+      ContainerDefinitions:
+        - Name: api
+          Image: !Ref EcrRepository
+          Cpu: 0
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref LogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: ecs
+          PortMappings:
+            - ContainerPort: 5058
+              HostPort: 5058
+              Protocol: tcp
+          HealthCheck:
+            Command:
+              - CMD-SHELL
+              - "curl -f http://localhost:5058/health/ || exit 1"
+            Interval: 60
+            Timeout: 30
+            Retries: 3
+            StartPeriod: 30
+      Tags:
+        - Key: "Environment"
+          Value: !Ref Environment
+        - Key: "StackName"
+          Value: !Ref StackName
+
+  TargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub "${StackName}TG"
+      Port: 5058
+      Protocol: HTTP
+      VpcId: !Ref VPCId
+      TargetType: ip
+      HealthCheckPath: /health/
+
+  Listener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 5058
+      Protocol: HTTP
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref TargetGroup
+
+  PrivateDnsService:
+    Type: AWS::ServiceDiscovery::Service
+    Properties:
+      Name: !Sub "${StackName}${Environment}Service"
+      NamespaceId: !Ref PrivateDnsNamespaceVpc
+      DnsConfig:
+        DnsRecords:
+          - Type: A
+            TTL: 60
+      HealthCheckCustomConfig:
+        FailureThreshold: 1
+
+
+  FargateService:
+    Type: AWS::ECS::Service
+    DependsOn:
+      - Listener
+      - TargetGroup
+    Properties:
+      ServiceName: !Sub "${StackName}${Environment}Service"
+      Cluster: !Ref EcsCluster
+      DesiredCount: 1
+      TaskDefinition: !Ref TaskDefinition
+      LaunchType: FARGATE
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          Subnets:
+            - !Ref PublicSubnetOne
+            - !Ref PublicSubnetTwo
+          SecurityGroups:
+            - !Ref SecurityGroup
+          AssignPublicIp: ENABLED
+      ServiceRegistries:
+        - RegistryArn: !GetAtt PrivateDnsService.Arn
+          ContainerName: api
+      LoadBalancers:
+        - ContainerName: api
+          ContainerPort: 5058
+          TargetGroupArn: !Ref TargetGroup
+      EnableExecuteCommand: true
+      Tags:
+        - Key: "Environment"
+          Value: !Ref Environment
+        - Key: "StackName"
+          Value: !Ref StackName
+
+  ScalableTarget:
+    Type: AWS::ApplicationAutoScaling::ScalableTarget
+    DependsOn:
+      - FargateService
+    Properties:
+      MaxCapacity: 4
+      MinCapacity: 1
+      ResourceId: !Sub "service/${StackName}${Environment}EcsCluster/${StackName}${Environment}Service"
+      RoleARN: !GetAtt EcsExecutionRole.Arn
+      ScalableDimension: ecs:service:DesiredCount
+      ServiceNamespace: ecs
+
+  ScalingPolicy:
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Properties:
+      PolicyName: !Sub "${StackName}${Environment}ScalingPolicy"
+      PolicyType: TargetTrackingScaling
+      ScalingTargetId: !Ref ScalableTarget
+      TargetTrackingScalingPolicyConfiguration:
+        TargetValue: 70.0
+        ScaleInCooldown: 60
+        ScaleOutCooldown: 60
+        PredefinedMetricSpecification:
+          PredefinedMetricType: ECSServiceAverageCPUUtilization
+
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/ecs/${StackName}${Environment}EcsCluster"
+      RetentionInDays: 14
