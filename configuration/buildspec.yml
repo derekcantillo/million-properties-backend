@@ -40,7 +40,7 @@ phases:
       - chmod +x build_and_push.sh
       - ./build_and_push.sh $NAME_SERVICE $CODEBUILD_RESOLVED_SOURCE_VERSION $AWS_ACCOUNT_ID $AWS_DEFAULT_REGION $IMAGE_REPO_NAME
       - echo build template cloudformation
-      - sam build -t template_app_runner.yml
+      - sam build -t template_ecs_fargate.yml
       - aws cloudformation package --template-file .aws-sam/build/template.yaml --s3-bucket $BUCKET_NAME --output-template-file packaged-template.yml
       - aws s3 cp ./packaged-template.yml s3://$BUCKET_NAME/packaged-template.yml
       - python param_update.py EcrRepository $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/${IMAGE_REPO_NAME}:${CODEBUILD_RESOLVED_SOURCE_VERSION} ${AWS_DEFAULT_REGION}
